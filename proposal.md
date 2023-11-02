@@ -3,17 +3,10 @@
 
 Please prepare a short proposal on your final project idea by **Nov 2**. The proposal should include:
 
-- Title & description of the project
-- Your name & partner's name
-- A description of the data required, and how it will be obtained (e.g. URL/DOI to data source)
-- 3 questions / analysis tasks you will perform on the data; in the spirit of the assignments we have been doing.
-
-*You may choose to work with your partner or independently on the final project. Please indicate which clearly in your proposal.*
-
-Replicating results of an existing study and exploring the impact of alternative assumptions in the data preparation, statistical methods chosen etc can provide an excellent template for an analysis (you'll see more of this in units 3 & 4)
-
-
-Please create your proposal in a markdown file called `proposal.md` in the root directory of the final project repo.  
+- Title: Fire Frequency and Climate Change in California
+- Maeve Gilbert, Russell Huang
+- We will be examinign fire data collected by CalFire (https://www.fire.ca.gov/Home/What-We-Do/Fire-Resource-Assessment-Program/GIS-Mapping-and-Data-Analytics), as well as the results generated from this paper: https://escholarship.org/uc/item/5wd1797m, which examined historical fire frequency and extent in California. Climate data may be obtained from the NOAA Climate Gridded Dataset (https://planetarycomputer.microsoft.com/dataset/noaa-nclimgrid-monthly), although this may be subject to change.
+- Has the frequency and extent of fires in California changed over the past 20 years (time span subject to change)? If so, how has it changed? Does fire frequency correlate with temperature data in California (is there a trend between rising temperatures, if they are rising, and more frequency and larger fires?) Where are fires more frequent, and has this changed over time? 
 
 
 ## Project Guidelines
