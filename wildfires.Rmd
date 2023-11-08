@@ -1,0 +1,18 @@
+---
+Title: Wilfire Frequency, Severity and CLimate Change in California
+author: Russell Huang and Maeve Gilbert
+output: 
+ html_document:
+   df_print: paged 
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
+fire
+
+```
+
+
