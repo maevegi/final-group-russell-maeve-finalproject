@@ -1,18 +1,41 @@
 ---
-Title: Wilfire Frequency, Severity and CLimate Change in California
+Title: Wilfire Frequency, Severity and Climate Change in California
 author: Russell Huang and Maeve Gilbert
 output: 
  html_document:
    df_print: paged 
-
+ github_document: 
+---
 ```{r}
 library(tidyverse)
+install.packages(raster)
+library(tmap)
+library(terra)
+library(sf)
 ```
+Read in the data sets. 
+```{r}
+#fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv"),
+  #col_types=
+
+colnames(fire)
+
+
+```
+We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
 ```{r}
-fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
-fire
-
+readOGR(dsn="County", layer="CaliforniaCounty")
 ```
 
+California shapefile. 
+```{r}
+download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/3db1e426-fb51-44f5-82d5-a54d7c6e188b/download/ca-state-boundary.zip", "ca-state-boundary.zip")
+unzip("ca-state-boundary.zip")
+CAfile<- "https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/3db1e426-fb51-44f5-82d5-a54d7c6e188b/download/ca-state-boundary.zip" 
+
+CAurl<- paste0("/vsizip/vsicurl/", CAfile)
+shapefile<- read_sf(CAurl)
+tm_shape(shapefile)+tm_polygons("CA_State_TIGER2016")
+```
 
