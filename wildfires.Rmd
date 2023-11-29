@@ -18,10 +18,20 @@ library(ggplot2)
 Read in the data sets. 
 ```{r}
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
+```
 
+
+```{r}
 colnames(fire)
 
+fire |>
+  select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
+  mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
+  group_by(year) |>
+  sum("incident_acres_burned")
+  
 
+#need to calculate total per year
 ```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
