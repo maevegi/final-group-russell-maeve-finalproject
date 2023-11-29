@@ -12,21 +12,18 @@ install.packages(raster)
 library(tmap)
 library(terra)
 library(sf)
+library(ggplot2)
 ```
+
 Read in the data sets. 
 ```{r}
-#fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv"),
-  #col_types=
+fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
 
 colnames(fire)
 
 
 ```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
-
-```{r}
-readOGR(dsn="County", layer="CaliforniaCounty")
-```
 
 California shapefile. 
 ```{r}
@@ -36,6 +33,9 @@ CAfile<- "https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resou
 
 CAurl<- paste0("/vsizip/vsicurl/", CAfile)
 shapefile<- read_sf(CAurl)
-tm_shape(shapefile)+tm_polygons("CA_State_TIGER2016")
+summary(shapefile)
+
+tm_shape(shapefile)+ tm_polygons("ALAND")
+tm_shape(shapefile)+tm_polygons("GEOID")
 ```
 
