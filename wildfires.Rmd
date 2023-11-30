@@ -8,11 +8,14 @@ output:
 ---
 ```{r}
 library(tidyverse)
-install.packages(raster)
+#install.packages(raster)
+library(raster)
 library(tmap)
 library(terra)
 library(sf)
 library(ggplot2)
+install.packages("rgdal")
+#library(rgdal)
 ```
 
 Read in the data sets. 
@@ -22,7 +25,7 @@ fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
 
 
 ```{r}
-colnames(fire)
+#colnames(fire)
 
 fire |>
   select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
@@ -31,7 +34,7 @@ fire |>
   sum("incident_acres_burned")
   
 
-#need to calculate total per year
+#need to combine all incidents for each year and calculate total acres burned per year
 ```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
@@ -47,5 +50,25 @@ summary(shapefile)
 
 tm_shape(shapefile)+ tm_polygons("ALAND")
 tm_shape(shapefile)+tm_polygons("GEOID")
+```
+
+Counties shapefile
+```{r}
+
+download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
+unzip("ca-county-boundaries.zip")
+counties<-"https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip"
+counties_url<-paste0("/vsizip/vsicurl/", counties)
+
+  
+  
+counties_sf<-read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
+summary(counties_sf)
+plot(counties_sf)
+tm_shape(counties_sf) + tm_polygons
+
+plot(fireRasters[[64]], col=fireCols(100))
+plot(counties, border="gray50", add=TRUE)
+
 ```
 
