@@ -14,8 +14,7 @@ library(tmap)
 library(terra)
 library(sf)
 library(ggplot2)
-install.packages("rgdal")
-#library(rgdal)
+library(stars)
 ```
 
 Read in the data sets. 
@@ -23,16 +22,22 @@ Read in the data sets.
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
 ```
 
-
+Selecting relevant columns from the data. 
 ```{r}
-#colnames(fire)
+colnames(fire)
 
 fire |>
-  select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
+  dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
   mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
   group_by(year) |>
   sum("incident_acres_burned")
-  
+```
+
+
+```{r}
+plot(new, max.plot=17)
+points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
+
 
 #need to combine all incidents for each year and calculate total acres burned per year
 ```
@@ -52,7 +57,7 @@ tm_shape(shapefile)+ tm_polygons("ALAND")
 tm_shape(shapefile)+tm_polygons("GEOID")
 ```
 
-Counties shapefile
+Counties shapefile from folder CA_Counties
 ```{r}
 
 download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
@@ -61,14 +66,27 @@ counties<-"https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/reso
 counties_url<-paste0("/vsizip/vsicurl/", counties)
 
   
-  
+tmap_options(max.categories=58) 
 counties_sf<-read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
 summary(counties_sf)
 plot(counties_sf)
-tm_shape(counties_sf) + tm_polygons
+CA<-tm_shape(counties_sf) + tm_polygons("COUNTYFP")
+plot(CA)
 
-plot(fireRasters[[64]], col=fireCols(100))
-plot(counties, border="gray50", add=TRUE)
 
+
+
+
+```
+Trying shapefile from folder "County".
+```{r}
+new<-read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
+plot(new)
+tm_shape(new, projection="box")+tm_polygons("COUNTFP")+ points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
+
+st_bbox(new)
+
+
+#make bounding box to define coordinates 
 ```
 
