@@ -18,19 +18,36 @@ library(stars)
 ```
 
 Read in the data sets. 
-```{r}
-fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv")
+```{r} 
+fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
+                 col_types="ccTTc?ccddccddcccTDDcll")
 ```
 
 Selecting relevant columns from the data. 
 ```{r}
-colnames(fire)
+#colnames(fire)
 
-fire |>
+acres<-fire |>
   dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
   mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
   group_by(year) |>
-  sum("incident_acres_burned")
+    summarise(total_acres_burned = sum(incident_acres_burned, na.rm = TRUE))
+
+acres
+```
+
+
+```{r}
+graph<- acres|>
+  ggplot(aes(x=year, y=total_acres_burned))+
+  geom_point()+
+  xlab("Year")+
+  ylab("Number of Acres Burned")+
+  #scale_y_continuous(labels = )
+  ggtitle("Acres burned in CA Wildfires, 1969-2023")
+
+
+scales::label_number()
 ```
 
 
@@ -39,6 +56,8 @@ plot(new, max.plot=17)
 points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
 
 
+#create new raster for each year
+#group by year, map all incidents per year on one raster, create one raster per year
 #need to combine all incidents for each year and calculate total acres burned per year
 ```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
@@ -73,10 +92,6 @@ plot(counties_sf)
 CA<-tm_shape(counties_sf) + tm_polygons("COUNTYFP")
 plot(CA)
 
-
-
-
-
 ```
 Trying shapefile from folder "County".
 ```{r}
@@ -88,5 +103,10 @@ st_bbox(new)
 
 
 #make bounding box to define coordinates 
+```
+
+```{r}
+
+download.file("https://www.ncei.noaa.gov/data/nclimgrid-monthly/access/nclimgrid_tavg.nc", "nclimgrid_tavg.nc")
 ```
 
