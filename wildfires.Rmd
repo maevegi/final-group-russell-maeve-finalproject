@@ -5,6 +5,7 @@ output:
  html_document:
    df_print: paged 
  github_document: 
+ pdf_document:
 ---
 ```{r}
 library(tidyverse)
@@ -15,8 +16,22 @@ library(terra)
 library(sf)
 library(ggplot2)
 library(stars)
+#install.packages("XML")
+library(XML)
+library(methods)
+library(xml2)
 ```
 
+## Introduction
+
+Three skills we are using in this module
+-Expansion of ggplot functions (to include more than default characteristics)
+-Use of at least 5 `dplyr` verbs / functions
+-
+Make sure to knit to pdf document when finished. 
+
+
+## Formatting the Data
 Read in the data sets. 
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
@@ -26,6 +41,8 @@ fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
 Selecting relevant columns from the data. 
 ```{r}
 #colnames(fire)
+reduced<-acres<-fire |>
+  dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude)
 
 acres<-fire |>
   dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
@@ -36,8 +53,9 @@ acres<-fire |>
 acres
 ```
 
-
+Change 
 ```{r}
+options(scipen=999)
 graph<- acres|>
   ggplot(aes(x=year, y=total_acres_burned))+
   geom_point()+
@@ -45,9 +63,9 @@ graph<- acres|>
   ylab("Number of Acres Burned")+
   #scale_y_continuous(labels = )
   ggtitle("Acres burned in CA Wildfires, 1969-2023")
+graph
 
-
-scales::label_number()
+#scales::label_number()
 ```
 
 
@@ -96,8 +114,9 @@ plot(CA)
 Trying shapefile from folder "County".
 ```{r}
 new<-read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
-plot(new)
-tm_shape(new, projection="box")+tm_polygons("COUNTFP")+ points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
+new|>plot()|>
+points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red", coords)
+tm_shape(new)+tm_polygons("COUNTFP")+ points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
 
 st_bbox(new)
 
@@ -107,6 +126,21 @@ st_bbox(new)
 
 ```{r}
 
-download.file("https://www.ncei.noaa.gov/data/nclimgrid-monthly/access/nclimgrid_tavg.nc", "nclimgrid_tavg.nc")
+temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/1969-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+               skip=4)
+new_temp<-temp|>
+  mutate(Date = str_extract(Date, "\\d{4}"))
+new_temp
+
+temp
+```
+```{r}
+precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/1969-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+                         skip=4)
+new_precip<-precipitation|>
+  mutate(Date = str_extract(Date, "\\d{4}"))
+new_precip
 ```
 
+# Works Cited
+NOAA National Centers for Environmental information, Climate at a Glance: Statewide Time Series, published November 2023, retrieved on December 4, 2023 from https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series
