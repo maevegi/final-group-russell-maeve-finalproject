@@ -150,11 +150,20 @@ Combined table with acres burned and temperature
 megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
   left_join(new_precip, by=c("year"="Date"))|>
   dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
-
-
+megatable
 ```
-```{r}
 
+```{r}
+ylim.prim <- c(122, 2942034)
+ylim.sec <- c(58.8, 61.5)
+
+b <- diff(ylim.prim)/diff(ylim.sec)
+a <- ylim.prim[1] - b*ylim.sec[1]
+
+ggplot(megatable, aes(year, total_acres_burned)) +
+  geom_line() + 
+  geom_line(aes(y = a + Avg_Temp*b), color = "red") +
+  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp"))
 ```
 
 
