@@ -129,8 +129,10 @@ Reading in temperature data from 2009-2023, dropping extraneous time stamp detai
 temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                skip=4)
 new_temp<-temp|>
-  mutate(Date = str_extract(Date, "\\d{4}"))
+  mutate(Date = str_extract(Date, "\\d{4}"))|>
+  rename(Avg_Temp=Value)
 new_temp
+
 
 ```
 
@@ -139,19 +141,30 @@ Precipitation data from 2009-2023. Same mutation performed on the years to show 
 precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                          skip=4)
 new_precip<-precipitation|>
-  mutate(Date = str_extract(Date, "\\d{4}"))
+  mutate(Date = str_extract(Date, "\\d{4}"))|>
+  rename(Avg_Precipitation=Value)
 new_precip
 ```
-Combined table 
+Combined table with acres burned and temperature
 ```{r}
-megatable<- left_join(acres_burned, new_temp, by=year)
+megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
+  left_join(new_precip, by=c("year"="Date"))|>
+  dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
 
+
+```
+```{r}
+
+```
+
+
+
+```{r}
 par(new=TRUE)
 fire_temp<-ggplot()+
   geom_line(data=acres_burned, mapping=aes(x=year, y=total_acres_burned))+
   geom_line(data=new_temp, mapping=aes(x=Date, y=Value))
 fire_temp
-
 ```
 
 # Works Cited
