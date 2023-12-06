@@ -161,19 +161,32 @@ b <- diff(ylim.prim)/diff(ylim.sec)
 a <- ylim.prim[1] - b*ylim.sec[1]
 
 ggplot(megatable, aes(year, total_acres_burned)) +
-  geom_line() + 
-  geom_line(aes(y = a + Avg_Temp*b), color = "red") +
+  geom_line(group=1, color="red") + 
+  geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
   scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp"))
+
+ggplot(megatable, aes(x=year, y=total_acres_burned))+
+  geom_line(aes(x=year, y=total_acres_burned))+
+  geom_line(aes(y=Avg_Temp))+
+  scale_y_continuous(name= "Acres_Burned", sec.axis=sec_axis(trans=~./45000 ,name="Temperature"))
+```
+
+```{r}
+primary_y<-c(122, 2942034)
+secondary_y<- c(7.93, 29.12)
+
+d <- diff(primary_y)/diff(secondary_y)
+c <- primary_y[1] - d*secondary_y[1]
+
+ggplot(megatable, aes(year, total_acres_burned)) +
+  geom_line(group=1, color="red") + 
+  geom_line(aes(y = c + Avg_Precipitation*d), color = "blue", group=1) +
+  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation"))
 ```
 
 
-
 ```{r}
-par(new=TRUE)
-fire_temp<-ggplot()+
-  geom_line(data=acres_burned, mapping=aes(x=year, y=total_acres_burned))+
-  geom_line(data=new_temp, mapping=aes(x=Date, y=Value))
-fire_temp
+
 ```
 
 # Works Cited
