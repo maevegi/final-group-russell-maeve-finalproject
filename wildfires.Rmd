@@ -161,14 +161,14 @@ b <- diff(ylim.prim)/diff(ylim.sec)
 a <- ylim.prim[1] - b*ylim.sec[1]
 
 ggplot(megatable, aes(year, total_acres_burned)) +
-  geom_line(group=1, color="red") + 
+  geom_line(group=1, aes(color="red")) + 
   geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
-  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp"))
-
-ggplot(megatable, aes(x=year, y=total_acres_burned))+
-  geom_line(aes(x=year, y=total_acres_burned))+
-  geom_line(aes(y=Avg_Temp))+
-  scale_y_continuous(name= "Acres_Burned", sec.axis=sec_axis(trans=~./45000 ,name="Temperature"))
+  scale_y_continuous("Total Acres BUrned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp")) +
+  ggtitle("Total Acres Burned & Average Temperature between 2009 and 2023") +
+  scale_color_manual(name = 'Variables',
+                     breaks = c('total_acres_burned', 'Avg_Temp'),
+                     values = c('red', 'darkgreen'))
+                     
 ```
 
 ```{r}
@@ -181,12 +181,23 @@ c <- primary_y[1] - d*secondary_y[1]
 ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, color="red") + 
   geom_line(aes(y = c + Avg_Precipitation*d), color = "blue", group=1) +
-  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation"))
+  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation")) +
+  ggtitle("Total Acres Burned and Average Precipitation between 2009 and 2023")
 ```
 
 
 ```{r}
+Avg_Temp_y <- c(58.8, 61.5)
+Avg_Precipitation_y <- c(7.93, 29.12)
 
+f <- diff(Avg_Temp_y)/diff(Avg_Precipitation_y)
+e <- Avg_Temp_y[1] - f*Avg_Precipitation_y[1]
+
+ggplot(megatable, aes(year, Avg_Temp)) +
+  geom_line(group=1, color="darkgreen") + 
+  geom_line(aes(y = e + Avg_Precipitation*f), color = "blue", group=1) +
+  scale_y_continuous("Avg_Temp", sec.axis = sec_axis(~ (.-e)/f, name = "Avg_Precipitation")) +
+  ggtitle("Average Temperature and Precipitation between 2009 and 2023")
 ```
 
 # Works Cited
