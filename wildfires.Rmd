@@ -38,11 +38,9 @@ fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
                  col_types="ccTTc?ccddccddcccTDDcll")
 ```
 
-Selecting relevant columns from the data. 
+Selecting relevant columns from the data. Excluding singular data point form 1969 to create consistent time frame with the climate data and exclude outliers. 
 ```{r}
 #colnames(fire)
-reduced<-acres<-fire |>
-  dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude)
 
 acres<-fire |>
   dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
@@ -50,13 +48,16 @@ acres<-fire |>
   group_by(year) |>
     summarise(total_acres_burned = sum(incident_acres_burned, na.rm = TRUE))
 
-acres
+acres_burned<-acres[-c(1), ]
+acres_burned
+
+
 ```
 
-Change 
+Changing notation so that it does not display scientific notation. Graphing acres burned over time span 2009-2023.
 ```{r}
 options(scipen=999)
-graph<- acres|>
+graph<- acres_burned|>
   ggplot(aes(x=year, y=total_acres_burned))+
   geom_point()+
   xlab("Year")+
@@ -65,7 +66,6 @@ graph<- acres|>
   ggtitle("Acres burned in CA Wildfires, 1969-2023")
 graph
 
-#scales::label_number()
 ```
 
 
@@ -123,24 +123,39 @@ st_bbox(new)
 
 #make bounding box to define coordinates 
 ```
-
+Reading in temperature data from 2009-2023, dropping extraneous time stamp details to limit the date to a four-digit year. Value represents average temperature in degrees farenheit. Anomaly represents deviation from average, calculated from the mean temperature between 1901-2000. 
 ```{r}
 
-temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/1969-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                skip=4)
 new_temp<-temp|>
   mutate(Date = str_extract(Date, "\\d{4}"))
 new_temp
 
-temp
 ```
+
+Precipitation data from 2009-2023. Same mutation performed on the years to show a four digit date. Precipitation listed in total inches per twelve month period. Anomaly is deviation from average calculated from 1901-2000. 
 ```{r}
-precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/1969-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                          skip=4)
 new_precip<-precipitation|>
   mutate(Date = str_extract(Date, "\\d{4}"))
 new_precip
 ```
+Combined table 
+```{r}
+megatable<- left_join(acres_burned, new_temp, by=year)
+
+par(new=TRUE)
+fire_temp<-ggplot()+
+  geom_line(data=acres_burned, mapping=aes(x=year, y=total_acres_burned))+
+  geom_line(data=new_temp, mapping=aes(x=Date, y=Value))
+fire_temp
+
+```
 
 # Works Cited
+Climate data obtained from:
 NOAA National Centers for Environmental information, Climate at a Glance: Statewide Time Series, published November 2023, retrieved on December 4, 2023 from https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series
+Fire incident data obtained from:
+https://www.fire.ca.gov/incidents
