@@ -36,11 +36,14 @@ Read in the data sets.
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
                  col_types="ccTTc?ccddccddcccTDDcll")
+fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
+
+st_crs(fire_spatial)<- st_crs(new)
 ```
 
 Selecting relevant columns from the data. Excluding singular data point form 1969 to create consistent time frame with the climate data and exclude outliers. 
 ```{r}
-#colnames(fire)
+colnames(fire)
 
 acres<-fire |>
   dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
@@ -80,54 +83,36 @@ points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
 ```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
-California shapefile. 
-```{r}
-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/3db1e426-fb51-44f5-82d5-a54d7c6e188b/download/ca-state-boundary.zip", "ca-state-boundary.zip")
-unzip("ca-state-boundary.zip")
-CAfile<- "https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/3db1e426-fb51-44f5-82d5-a54d7c6e188b/download/ca-state-boundary.zip" 
 
-CAurl<- paste0("/vsizip/vsicurl/", CAfile)
-shapefile<- read_sf(CAurl)
-summary(shapefile)
-
-tm_shape(shapefile)+ tm_polygons("ALAND")
-tm_shape(shapefile)+tm_polygons("GEOID")
-```
-
-Counties shapefile from folder CA_Counties
-```{r}
-
-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
-unzip("ca-county-boundaries.zip")
-counties<-"https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip"
-counties_url<-paste0("/vsizip/vsicurl/", counties)
-
-  
-tmap_options(max.categories=58) 
-counties_sf<-read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
-summary(counties_sf)
-plot(counties_sf)
-CA<-tm_shape(counties_sf) + tm_polygons("COUNTYFP")
-plot(CA)
-
-```
 Trying shapefile from folder "County".
 ```{r}
 new<-read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
-new|>plot()|>
-points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red", coords)
-tm_shape(new)+tm_polygons("COUNTFP")+ points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
 
-st_bbox(new)
+summary(new)
+tm_shape(new)+tm_polygons("COUNTYFP")+tm_legend(legend.show=FALSE)+ tm_shape(fire_spatial)+tm_dots("incident_acres_burned")
 
+?tm_legend
 
-#make bounding box to define coordinates 
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_spatial)+
+  tm_dots("incident_acres_burned")+
+  tm_legend(legend.format(fun=)
+
+loop<-for(i in 1:nrow(fire_spatial)){
+ tm_shape(new)+tm_polygons()+
+  tm_shape(fire_spatial)+
+  tm_dots("incident_acres_burned") 
+}
+loop
 ```
-Reading in temperature data from 2009-2023, dropping extraneous time stamp details to limit the date to a four-digit year. Value represents average temperature in degrees farenheit. Anomaly represents deviation from average, calculated from the mean temperature between 1901-2000. 
+
+
+Reading in temperature data from 2009-2023, dropping extraneous time stamp details to limit the date to a four-digit year. Value represents average temperature in degrees Farenheit. Anomaly represents deviation from average, calculated from the mean temperature between 1901-2000. 
 ```{r}
 
 temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                skip=4)
+
 new_temp<-temp|>
   mutate(Date = str_extract(Date, "\\d{4}"))|>
   rename(Avg_Temp=Value)
@@ -150,9 +135,12 @@ Combined table with acres burned and temperature
 megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
   left_join(new_precip, by=c("year"="Date"))|>
   dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
-megatable
+
+experiment<-pivot_longer(megatable, cols=total_acres_burned:Avg_Precipitation, names_to="variable", values_to="data")
+ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable, scales="free")
 ```
 
+Graph with total acres burned and average annual temperatures 
 ```{r}
 ylim.prim <- c(122, 2942034)
 ylim.sec <- c(58.8, 61.5)
@@ -163,14 +151,15 @@ a <- ylim.prim[1] - b*ylim.sec[1]
 ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, aes(color="red")) + 
   geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
-  scale_y_continuous("Total Acres BUrned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp")) +
-  ggtitle("Total Acres Burned & Average Temperature between 2009 and 2023") +
+  scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
+  ggtitle("Total Acres Burned & Average Temperature, 2009-2023") +
   scale_color_manual(name = 'Variables',
                      breaks = c('total_acres_burned', 'Avg_Temp'),
                      values = c('red', 'darkgreen'))
                      
 ```
 
+Graph with total acres burned and annual precipitation values
 ```{r}
 primary_y<-c(122, 2942034)
 secondary_y<- c(7.93, 29.12)
@@ -182,10 +171,10 @@ ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, color="red") + 
   geom_line(aes(y = c + Avg_Precipitation*d), color = "blue", group=1) +
   scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation")) +
-  ggtitle("Total Acres Burned and Average Precipitation between 2009 and 2023")
+  ggtitle("Total Acres Burned and Average Precipitation, 2009-2023")
 ```
 
-
+Graph with average annual temperatures and annual precipitation values. Values for 2023 are missing since the year has not ended and the data has not been finalized. 
 ```{r}
 Avg_Temp_y <- c(58.8, 61.5)
 Avg_Precipitation_y <- c(7.93, 29.12)
@@ -196,12 +185,19 @@ e <- Avg_Temp_y[1] - f*Avg_Precipitation_y[1]
 ggplot(megatable, aes(year, Avg_Temp)) +
   geom_line(group=1, color="darkgreen") + 
   geom_line(aes(y = e + Avg_Precipitation*f), color = "blue", group=1) +
-  scale_y_continuous("Avg_Temp", sec.axis = sec_axis(~ (.-e)/f, name = "Avg_Precipitation")) +
-  ggtitle("Average Temperature and Precipitation between 2009 and 2023")
+  scale_y_continuous("Avgerage Temperature (F)", sec.axis = sec_axis(~ (.-e)/f, name = "Average Annual Precipitation(in)")) +
+  ggtitle("Average Temperature and Annual Precipitation,  2009-2023")
 ```
+
+#notes for office hours:
+- adding a legend to ggplots
+-adding longitude and latitude points to rasters, creating raster for each year and using predictor equations 
+-clarify how the transformation equations work 
 
 # Works Cited
 Climate data obtained from:
 NOAA National Centers for Environmental information, Climate at a Glance: Statewide Time Series, published November 2023, retrieved on December 4, 2023 from https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series
 Fire incident data obtained from:
 https://www.fire.ca.gov/incidents
+Some code based on data from:
+https://stackoverflow.com/questions/3099219/ggplot-with-2-y-axes-on-each-side-and-different-scales
