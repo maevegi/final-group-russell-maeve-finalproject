@@ -72,21 +72,13 @@ graph
 ```
 
 
-```{r}
-plot(new, max.plot=17)
-points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
 
-
-#create new raster for each year
-#group by year, map all incidents per year on one raster, create one raster per year
-#need to combine all incidents for each year and calculate total acres burned per year
-```
 We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
 
 Trying shapefile from folder "County".
-```{r}
-new<-read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
+{r}
+new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
 
 summary(new)
 tm_shape(new)+tm_polygons("COUNTYFP")+tm_legend(legend.show=FALSE)+ tm_shape(fire_spatial)+tm_dots("incident_acres_burned")
@@ -104,7 +96,8 @@ loop<-for(i in 1:nrow(fire_spatial)){
   tm_dots("incident_acres_burned") 
 }
 loop
-```
+#come back to this one
+
 
 
 Reading in temperature data from 2009-2023, dropping extraneous time stamp details to limit the date to a four-digit year. Value represents average temperature in degrees Farenheit. Anomaly represents deviation from average, calculated from the mean temperature between 1901-2000. 
@@ -136,27 +129,53 @@ megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
   left_join(new_precip, by=c("year"="Date"))|>
   dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
 
+megatable 
+
 experiment<-pivot_longer(megatable, cols=total_acres_burned:Avg_Precipitation, names_to="variable", values_to="data")
+
+experiment 
+
 ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable, scales="free")
 ```
 
 Graph with total acres burned and average annual temperatures 
-```{r}
+{r}
+
 ylim.prim <- c(122, 2942034)
 ylim.sec <- c(58.8, 61.5)
 
 b <- diff(ylim.prim)/diff(ylim.sec)
 a <- ylim.prim[1] - b*ylim.sec[1]
 
-ggplot(megatable, aes(year, total_acres_burned)) +
+cool_plot_bro <- ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, aes(color="red")) + 
+  geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1, show.legend = TRUE) +
+  scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
+  ggtitle("Total Acres Burned & Average Temperature, 2009-2023") +
+  scale_color_manual(name = 'Variables',
+                     breaks = c('total_acres_burned', 'Avg_Temp'),
+                     values = c('red', 'darkgreen')) 
+cool_plot_bro                
+
+
+```{r}
+
+ylim.prim <- c(122, 2942034)
+ylim.sec <- c(58.8, 61.5)
+
+b <- diff(ylim.prim)/diff(ylim.sec)
+a <- ylim.prim[1] - b*ylim.sec[1]
+
+cool_plot_bro <- ggplot(megatable, aes(year, total_acres_burned)) +
+  geom_line(group=1, aes(color= "gray")) + 
   geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
   scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
   ggtitle("Total Acres Burned & Average Temperature, 2009-2023") +
   scale_color_manual(name = 'Variables',
                      breaks = c('total_acres_burned', 'Avg_Temp'),
-                     values = c('red', 'darkgreen'))
-                     
+                     values = c('red', 'darkgreen')) + 
+  geom_text(aes(x = 8, y = 15, label = "-- = total_acres_burned"), color = "gray"))
+cool_plot_bro 
 ```
 
 Graph with total acres burned and annual precipitation values
@@ -190,7 +209,7 @@ ggplot(megatable, aes(year, Avg_Temp)) +
 ```
 
 #notes for office hours:
-- adding a legend to ggplots
+- adding a legend to ggplots 
 -adding longitude and latitude points to rasters, creating raster for each year and using predictor equations 
 -clarify how the transformation equations work 
 
