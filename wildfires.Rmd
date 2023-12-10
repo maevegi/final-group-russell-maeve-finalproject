@@ -24,15 +24,17 @@ library(xml2)
 
 ## Introduction
 
+For the state of California, wildfires are perhaps one of the most pressing concerns in terms of the future of climate change. In order to examine the relationship between climate change and wildifire extent, we are examining average temperature and precipitation compared to the number of acres burned per year, in a period from 2009-2023. Our analysis is loosely based on that of Krawchuk and Moritz (2012). However, due to difficulties in accessing the exact data used in this study, our scope is limited to a 13 year time span. Our temperature data is also obtained from the NOAA National Centers for Environmental Information rather than the PRISM project, which the authors used. Due to these differences, our results and analysis of the data are different than those of the paper. 
+
 Three skills we are using in this module
 -Expansion of ggplot functions (to include more than default characteristics)
 -Use of at least 5 `dplyr` verbs / functions
--
+-Use of spatial vector data (sf package) and visualization of spatial data
 Make sure to knit to pdf document when finished. 
 
 
 ## Formatting the Data
-Read in the data sets. 
+The first step in analyzig wildfire data is to obtai information regarding fire incident dates, locations, longtidue and latitude, and the number of acres burned. Our data is collected from CalFire. The second step performed here transforms the longitude and latitude points from this .csv file into a spatial object so that we can later map these points onto and sf file of the state. Additionally, because the points have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. 
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
                  col_types="ccTTc?ccddccddcccTDDcll")
@@ -41,9 +43,8 @@ fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"
 st_crs(fire_spatial)<- st_crs(new)
 ```
 
-Selecting relevant columns from the data. Excluding singular data point form 1969 to create consistent time frame with the climate data and exclude outliers. 
+Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available dat being 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we are the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occuring in December is low. 
 ```{r}
-colnames(fire)
 
 acres<-fire |>
   dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
@@ -52,12 +53,12 @@ acres<-fire |>
     summarise(total_acres_burned = sum(incident_acres_burned, na.rm = TRUE))
 
 acres_burned<-acres[-c(1), ]
-acres_burned
+
 
 
 ```
 
-Changing notation so that it does not display scientific notation. Graphing acres burned over time span 2009-2023.
+We chose to change the default graphing setting from scientific notation to plain integers to show the acres burned in a clearer manner. Here, we are  showing the number of acres burned in wildfires every year from 2009 to 2023. 
 ```{r}
 options(scipen=999)
 graph<- acres_burned|>
@@ -65,49 +66,56 @@ graph<- acres_burned|>
   geom_point()+
   xlab("Year")+
   ylab("Number of Acres Burned")+
-  #scale_y_continuous(labels = )
   ggtitle("Acres burned in CA Wildfires, 1969-2023")
-graph
+
 
 ```
 
 
-```{r}
-plot(new, max.plot=17)
-points(x = fire$incident_longitude, y= fire$incident_latitude, col = "red")
-
-
-#create new raster for each year
-#group by year, map all incidents per year on one raster, create one raster per year
-#need to combine all incidents for each year and calculate total acres burned per year
-```
-We need to read in climate data, determine whether this should be monthly or daily values. Also should see if we can incorporate a spatial element to this, for example using a raster of California to plot fire spatial distribution over time. 
 
 
 Trying shapefile from folder "County".
 ```{r}
 new<-read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
 
-summary(new)
-tm_shape(new)+tm_polygons("COUNTYFP")+tm_legend(legend.show=FALSE)+ tm_shape(fire_spatial)+tm_dots("incident_acres_burned")
-
-?tm_legend
-
 tm_shape(new)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots("incident_acres_burned")+
-  tm_legend(legend.format(fun=)
+  tm_layout(legend.width=0.6)
+  #tm_legend(legend.format(fun=)
 
+
+  group_by(incident_date_created)
+
+  vector1<-c()  
+  for (i in 1:nrow(fire_spatial)){
+    vector1<-tm_shape(new)+tm_polygons()+
+      tm_shape(fire_spatial)+
+      tm_dots("incident_acres_burned")
+    print(vector1)
+  }
+  
+fire_spatial|>
+  mutate(year = str_extract(incident_date_created, "\\d{4}"))|>
+  select(year= "2009")
+
+tm_shape(new) + tm_polygons()+
+  tm_shape(fire_spatial, filter=TRUE)+
+tm_dots("incident_acres_burned") + 
+tm_facets(nrow = 14, sync = TRUE)
+  
+  
 loop<-for(i in 1:nrow(fire_spatial)){
- tm_shape(new)+tm_polygons()+
+ vector<-tm_shape(new)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots("incident_acres_burned") 
 }
 loop
+
+
 ```
 
-
-Reading in temperature data from 2009-2023, dropping extraneous time stamp details to limit the date to a four-digit year. Value represents average temperature in degrees Farenheit. Anomaly represents deviation from average, calculated from the mean temperature between 1901-2000. 
+Because our analysis is focused on how climate changes influence wildfires, we need to read in climate data containing precipitation and average temperature values. Since the time frame for fire data was 2009-2023, we are using this same period to obtain temperature data. Due to the formatting of the data, we needed to drop extraneous time stamp details to limit the date to a four-digit year. We renamed the "Value" column to Avg_Temp, which represents average temperature in degrees Fahrenheit. Anomaly represents the deviation from an average, calculated from the mean temperature between 1901-2000. Note that because the year 2023 is not over, our data only goes until 2022. 
 ```{r}
 
 temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
@@ -121,7 +129,7 @@ new_temp
 
 ```
 
-Precipitation data from 2009-2023. Same mutation performed on the years to show a four digit date. Precipitation listed in total inches per twelve month period. Anomaly is deviation from average calculated from 1901-2000. 
+Next, we collected precipitation data from 2009-2023. We applied the same manipulation on the years column to show a four digit date. Precipitation is listed in total inches per twelve month period. This column was renamed Avg_Precipitation (formerly Value). Anomaly represents the deviation from the average calculated from 1901-2000. 
 ```{r}
 precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                          skip=4)
@@ -130,14 +138,16 @@ new_precip<-precipitation|>
   rename(Avg_Precipitation=Value)
 new_precip
 ```
-Combined table with acres burned and temperature
+Our first method of comparison was to plot each graph side by side. To do this, we first combined all three tables (acres burned, temperature, and precipitation) and changed all of the columns from Date to year. We then excluded the column containing the anomaly values, since this was unncessary for the analysis. In order to 
 ```{r}
 megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
   left_join(new_precip, by=c("year"="Date"))|>
   dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
 
 experiment<-pivot_longer(megatable, cols=total_acres_burned:Avg_Precipitation, names_to="variable", values_to="data")
-ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable, scales="free")
+
+
+ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable, scales="free")+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
 Graph with total acres burned and average annual temperatures 
@@ -152,8 +162,9 @@ ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, aes(color="red")) + 
   geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
   scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
-  ggtitle("Total Acres Burned & Average Temperature, 2009-2023") +
-  scale_color_manual(name = 'Variables',
+  ggtitle("Total Acres Burned & Average Temperature",  subtitle="2009-20223" ) +
+  
+  #scale_color_manual(name = 'Variables',
                      breaks = c('total_acres_burned', 'Avg_Temp'),
                      values = c('red', 'darkgreen'))
                      
@@ -171,7 +182,7 @@ ggplot(megatable, aes(year, total_acres_burned)) +
   geom_line(group=1, color="red") + 
   geom_line(aes(y = c + Avg_Precipitation*d), color = "blue", group=1) +
   scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation")) +
-  ggtitle("Total Acres Burned and Average Precipitation, 2009-2023")
+  ggtitle("Total Acres Burned and Average Precipitation", subtitle=" 2009-2023")
 ```
 
 Graph with average annual temperatures and annual precipitation values. Values for 2023 are missing since the year has not ended and the data has not been finalized. 
@@ -201,3 +212,5 @@ Fire incident data obtained from:
 https://www.fire.ca.gov/incidents
 Some code based on data from:
 https://stackoverflow.com/questions/3099219/ggplot-with-2-y-axes-on-each-side-and-different-scales
+Initial Paper:
+Krawchuk, M., & Moritz, M. (2012). Fire and Climate Change in California: Changes in the Distribution and Frequency of Fire in Climates of the Future and Recent Past (1911-2099). UC Berkeley: California Institute for Energy and Environment (CIEE). Retrieved from https://escholarship.org/uc/item/5wd1797m
