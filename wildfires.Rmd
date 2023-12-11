@@ -6,20 +6,16 @@ output:
    df_print: paged 
  github_document: 
  pdf_document:
+   md_document:
 ---
-```{r include=FALSE}
+```{r}
 library(tidyverse)
-#install.packages(raster)
-library(raster)
 library(tmap)
 library(terra)
 library(sf)
 library(ggplot2)
 library(stars)
-#install.packages("XML")
-library(XML)
 library(methods)
-library(xml2)
 ```
 
 ## Introduction
@@ -38,15 +34,9 @@ The first step in analyzing wildfire data is to obtain information regarding fir
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
                  col_types="ccTTc?ccddccddcccTDDcll") |>
-  mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
-  group_by(year)
+        mutate(year = str_extract(incident_date_created, "\\d{4}"))
 
-fire_2009 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
-  filter(year==2009)
-
-fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
-  filter(year==2022)
-
+fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
 ```
 
 Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available data being from 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we use the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occurring in December is low. 
@@ -87,14 +77,28 @@ tm_shape(new)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots(size="incident_acres_burned", col = "red")+
   tm_layout(legend.width=0.6)
-  #tm_legend(legend.format(fun=)
 
 ```
-
+In order to visualize wildfires across the state over time, we are repeating the process done with all incident points with data from 2013, 2020, and 2022 individually. We could not use data from 2009 since there was no associated longitude and latitude points, so we had to start with the next available year (2013). We wanted to compare the oldest and newest data points against each other to see if the number and distribution of wildfires has changed over time. We also included the year 2020, since the number of acres burned greatly increased. Notice that the scale of the dots changes for each year. 
 ```{r}
-st_crs(fire_2009)<- st_crs(new)
+fire_2013 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2013)
+
+fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2022)
+
+fire_2020<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))|>
+  filter(year==2020)
+
+st_crs(fire_2013)<- st_crs(new)
 tm_shape(new)+tm_polygons()+
-  tm_shape(fire_2009)+
+  tm_shape(fire_2013)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+
+st_crs(fire_2020)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2020)+
   tm_dots(size="incident_acres_burned")+
   tm_layout(legend.width=0.6)
 
@@ -103,6 +107,8 @@ tm_shape(new)+tm_polygons()+
   tm_shape(fire_2022)+
   tm_dots(size="incident_acres_burned")+
   tm_layout(legend.width=0.6)
+
+
 ```
 
 ##Climate Data
