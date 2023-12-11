@@ -1,5 +1,5 @@
 ---
-Title: Wilfire Frequency, Severity and Climate Change in California
+Title: Wildfire Frequency, Severity and Climate Change in California
 author: Russell Huang and Maeve Gilbert
 output: 
  html_document:
@@ -37,9 +37,15 @@ Make sure to knit to pdf document when finished.
 The first step in analyzing wildfire data is to obtain information regarding fire incident dates, locations, longitude and latitude, and the number of acres burned. Our data is collected from CalFire. The second step performed here transforms the longitude and latitude points from this .csv file into a spatial object so that we can later map these points onto an sf file of the state. 
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
-                 col_types="ccTTc?ccddccddcccTDDcll")
+                 col_types="ccTTc?ccddccddcccTDDcll") |>
+  mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
+  group_by(year)
 
-fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
+fire_2009 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2009)
+
+fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2022)
 
 ```
 
@@ -71,7 +77,7 @@ graph<- acres_burned|>
 
 ##Spatial Visualization of the Data
 
-Next, we are reading in a shapefile with the borders of California. Additionally, because the points with the fire incident data have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. We can then plot these points on top of the shapfile for California. The points are set to reflect the number of acres burned, so larger points mean bigger fires. 
+Next, we are reading in a shapefile with the borders of California. Additionally, because the points with the fire incident data have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. We can then plot these points on top of the shapefile for California. The points are set to reflect the number of acres burned, so larger points mean bigger fires. 
 ```{r}
 
 new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
@@ -83,7 +89,20 @@ tm_shape(new)+tm_polygons()+
   tm_layout(legend.width=0.6)
   #tm_legend(legend.format(fun=)
 
+```
 
+```{r}
+st_crs(fire_2009)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2009)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+
+st_crs(fire_2022)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2022)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
 ```
 
 ##Climate Data
