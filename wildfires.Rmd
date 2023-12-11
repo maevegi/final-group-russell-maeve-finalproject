@@ -7,7 +7,7 @@ output:
  github_document: 
  pdf_document:
 ---
-```{r}
+```{r include=FALSE}
 library(tidyverse)
 #install.packages(raster)
 library(raster)
@@ -76,9 +76,10 @@ Next, we are reading in a shapefile with the borders of California. Additionally
 
 new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
 st_crs(fire_spatial)<- st_crs(new)
+
 tm_shape(new)+tm_polygons()+
   tm_shape(fire_spatial)+
-  tm_dots(size="incident_acres_burned")+
+  tm_dots(size="incident_acres_burned", col = "red")+
   tm_layout(legend.width=0.6)
   #tm_legend(legend.format(fun=)
 
