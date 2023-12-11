@@ -71,7 +71,7 @@ graph<- acres_burned|>
 
 ```
 
-
+Next, we are reading in a shapefile with the borders of California. 
 ```{r}
 Trying shapefile from folder "County".
 {r}
@@ -79,12 +79,14 @@ new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
 
 tm_shape(new)+tm_polygons()+
   tm_shape(fire_spatial)+
-  tm_dots("incident_acres_burned")+
+  tm_dots(size="incident_acres_burned")+
   tm_layout(legend.width=0.6)
   #tm_legend(legend.format(fun=)
 
 
-  group_by(incident_date_created)
+year1<- fire_spatial|>
+  mutate(year=str_extract(incident_date_created, "\\d{4}"))|>
+  select(year=="2009")
 
   vector1<-c()  
   for (i in 1:nrow(fire_spatial)){
@@ -111,7 +113,21 @@ loop<-for(i in 1:nrow(fire_spatial)){
 }
 loop
 ```
-
+```{r}
+time_frame<-fire|>
+  mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
+filter(year==2009:2023)|>
+  
+sf_time<- st_as_sf(time_frame, coords=c("incident_longitude", "incident_latitude"))
+vector2<- c()
+for (i in nrow(sf_time)){
+  vector2<-tm_shape(new)+tm_polygons()+
+  tm_shape(fire_spatial)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+  print(vector2)
+}
+```
 Because our analysis is focused on how climate changes influence wildfires, we need to read in climate data containing precipitation and average temperature values. Since the time frame for fire data was 2009-2023, we are using this same period to obtain temperature data. Due to the formatting of the data, we needed to drop extraneous time stamp details to limit the date to a four-digit year. We renamed the "Value" column to Avg_Temp, which represents average temperature in degrees Fahrenheit. Anomaly represents the deviation from an average, calculated from the mean temperature between 1901-2000. Note that because the year 2023 is not over, our data only goes until 2022. 
 ```{r}
 
@@ -171,26 +187,7 @@ ggplot(megatable, aes(year, total_acres_burned)) +
                           guide = "legend")
 ```
 
-```{r}
 
-ylim.prim <- c(122, 2942034)
-ylim.sec <- c(58.8, 61.5)
-
-b <- diff(ylim.prim)/diff(ylim.sec)
-a <- ylim.prim[1] - b*ylim.sec[1]
-
-cool_plot_bro <- ggplot(megatable, aes(year, total_acres_burned)) +
-  geom_line(group=1, aes(color= "gray")) + 
-  geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
-  scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
-  ggtitle("Total Acres Burned & Average Temperature",  subtitle="2009-20223" ) +
-  
-  #scale_color_manual(name = 'Variables',
-                     #breaks = c('total_acres_burned', 'Avg_Temp'),
-                    # values = c('red', 'darkgreen')) + 
-  geom_text(aes(x = 8, y = 15, label = "-- = total_acres_burned"), color = "gray")
-cool_plot_bro 
-```
 
 Graph with total acres burned and annual precipitation values
 ```{r}
