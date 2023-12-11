@@ -1,0 +1,238 @@
+---
+Title: Wildfire Frequency, Severity and Climate Change in California
+author: Russell Huang and Maeve Gilbert
+output: 
+ html_document:
+   df_print: paged 
+ github_document: 
+ pdf_document:
+   md_document:
+---
+```{r}
+library(tidyverse)
+library(tmap)
+library(terra)
+library(sf)
+library(ggplot2)
+library(stars)
+library(methods)
+```
+
+## Introduction
+
+For the state of California, wildfires are perhaps one of the most pressing concerns in terms of the future of climate change. In order to examine the relationship between climate change and wildfire extent, we are examining average temperature and precipitation compared to the number of acres burned per year, in a period from 2009-2023. Our analysis is loosely based on that of Krawchuk and Moritz (2012). However, due to difficulties in accessing the exact data used in this study, our scope is limited to a 13 year time span. Our temperature data is also obtained from the NOAA National Centers for Environmental Information rather than the PRISM project, which the authors used. Due to these differences, our results and analysis of the data are different than those of the paper. 
+
+The following are the three skills we are using in this module:
+-Expansion of ggplot functions (to include more than default characteristics)
+-Use of at least 5 `dplyr` verbs / functions
+-Use of spatial vector data (sf package) and visualization of spatial data
+Make sure to knit to pdf document when finished. 
+
+
+## Formatting the Data
+The first step in analyzing wildfire data is to obtain information regarding fire incident dates, locations, longitude and latitude, and the number of acres burned. Our data is collected from CalFire. The second step performed here transforms the longitude and latitude points from this .csv file into a spatial object so that we can later map these points onto an sf file of the state. 
+```{r} 
+fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
+                 col_types="ccTTc?ccddccddcccTDDcll") |>
+        mutate(year = str_extract(incident_date_created, "\\d{4}"))
+
+fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
+```
+
+Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available data being from 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we use the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occurring in December is low. 
+```{r}
+
+acres<-fire |>
+  dplyr::select(incident_name, incident_date_created, incident_county, incident_location, incident_acres_burned, incident_longitude, incident_latitude) |>
+  mutate(year = str_extract(incident_date_created, "\\d{4}")) |>
+  group_by(year) |>
+    summarise(total_acres_burned = sum(incident_acres_burned, na.rm = TRUE))
+
+acres_burned<-acres[-c(1), ]
+
+```
+
+We chose to change the default graphing setting from scientific notation to plain integers to show the acres burned in a clearer manner. Here, we are showing the number of acres burned in wildfires every year from 2009 to 2023. 
+```{r}
+options(scipen=999)
+graph<- acres_burned|>
+  ggplot(aes(x=year, y=total_acres_burned))+
+  geom_point()+
+  xlab("Year")+
+  ylab("Number of Acres Burned")+
+  ggtitle("Acres burned in CA Wildfires, 1969-2023")
+
+```
+
+
+##Spatial Visualization of the Data
+
+Next, we are reading in a shapefile with the borders of California. Additionally, because the points with the fire incident data have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. We can then plot these points on top of the shapefile for California. The points are set to reflect the number of acres burned, so larger points mean bigger fires. 
+```{r}
+new_counties<-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
+unzip("ca-county-boundaries.zip")
+CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
+st_crs(fire_spatial)<- st_crs(CA)
+
+new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
+st_crs(fire_spatial)<- st_crs(new)
+
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_spatial)+
+  tm_dots(size="incident_acres_burned", col = "red")+
+  tm_layout(legend.width=0.6)
+
+tm_shape(CA)+tm_polygons()+
+  tm_shape(fire_spatial)+
+  tm_dots(size="incident_acres_burned", col = "red")+
+  tm_layout(legend.width=0.6)
+```
+In order to visualize wildfires across the state over time, we are repeating the process done with all incident points with data from 2013, 2020, and 2022 individually. We could not use data from 2009 since there was no associated longitude and latitude points, so we had to start with the next available year (2013). We wanted to compare the oldest and newest data points against each other to see if the number and distribution of wildfires has changed over time. We also included the year 2020, since the number of acres burned greatly increased. Notice that the scale of the dots changes for each year. 
+```{r}
+fire_2013 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2013)
+
+fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude")) |>
+  filter(year==2022)
+
+fire_2020<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))|>
+  filter(year==2020)
+
+st_crs(fire_2013)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2013)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+
+st_crs(fire_2020)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2020)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+
+st_crs(fire_2022)<- st_crs(new)
+tm_shape(new)+tm_polygons()+
+  tm_shape(fire_2022)+
+  tm_dots(size="incident_acres_burned")+
+  tm_layout(legend.width=0.6)
+
+
+```
+
+##Climate Data
+
+Because our analysis is focused on how climate changes influence wildfires, we need to read in climate data containing precipitation and average temperature values. Since the time frame for fire data is between 2009-2023, we are using this same period to obtain temperature data. Due to the formatting of the data, we needed to drop extraneous time stamp details to limit the date to a four-digit year. We renamed the "Value" column to Avg_Temp, which represents average temperature in degrees Fahrenheit. Anomaly represents the deviation from an average, calculated from the mean temperature between 1901-2000. Note that because the year 2023 is not over, our data only goes until 2022. 
+```{r}
+
+temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+               skip=4)
+
+new_temp<-temp|>
+  mutate(Date = str_extract(Date, "\\d{4}"))|>
+  rename(Avg_Temp=Value)
+new_temp
+
+
+```
+
+Next, we collected precipitation data from 2009-2023. We applied the same manipulation on the years column to show a four digit date. Precipitation is listed in total inches per twelve month period. This column was renamed Avg_Precipitation (formerly "Value"). Anomaly represents the deviation from the average calculated from 1901-2000. 
+```{r}
+precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
+                         skip=4)
+new_precip<-precipitation|>
+  mutate(Date = str_extract(Date, "\\d{4}"))|>
+  rename(Avg_Precipitation=Value)
+new_precip
+
+```
+
+Our first method of comparison was to plot each graph side by side. To do this, we first combined all three tables (acres burned, temperature, and precipitation) and changed all of the columns from "Date" to "year". We then excluded the columns containing the anomaly values, since this was unnecessary for the analysis. To ensure that the values are going to be correctly inputted into the graphs, we utilize the "pivot_longer" function, whereby the all three data points are inputted into one column, with their associated data placed in another. We do this while creating a new subject called "experiment". From there we plot the data points and make necessary adjustments in order to create neat and legible graphs showcasing the trends in acres burned, temperature, and precipitation between 2009 and 2022/2023.
+```{r}
+megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
+  left_join(new_precip, by=c("year"="Date"))|>
+  dplyr::select("year", "total_acres_burned", "Avg_Temp", "Avg_Precipitation")
+
+experiment<-pivot_longer(megatable, cols=total_acres_burned:Avg_Precipitation, names_to="variable", values_to="data")
+
+ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable, scales="free")+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+ 
+
+```
+
+
+We want to also compare the trends of these different variables across the past decade by running the data points from these variables on the same graph. In this graph we are comparing the trends of total acres burned with average annual temperatures. The correlation between these two variables is not very strong. For example, from 2013 to 2016 average temperatures were high but the number of acres burned remained low. However, between 2017 and 2021, total acres burned appeared to fluctuate in sync with average temperatures. This could be due to higher temperatures leading to less moisture in the air and fuel, leading to increased likelihood, intensity, and extent of wildfires. 
+```{r}
+ylim.prim <- c(122, 2942034)
+ylim.sec <- c(58.8, 61.5)
+
+b <- diff(ylim.prim)/diff(ylim.sec)
+a <- ylim.prim[1] - b*ylim.sec[1]
+
+ggplot(megatable, aes(year, total_acres_burned)) +
+  geom_line(group=1, aes(color="red")) + 
+  geom_line(group=1, aes(y = a + Avg_Temp*b ,  show.legend = TRUE, color="darkgreen"))+
+  scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
+  ggtitle("Total Acres Burned & Average Temperature, 2009-2023") +
+   theme(axis.text.x = element_text(angle = 90))+
+  scale_color_identity(name = "Variable",
+                          breaks = c("red", "darkgreen"),
+                          labels = c("Total Acres Burned", "Average Temperature"),
+                          guide = "legend")
+```
+
+
+This graph highlights total acres burned and annual precipitation values. In general, the higher the precipitation, the wetter the land, and therefore the lesser the chance of fires occurring. This correlation is clear especially between 2019 and 2020, where 2019 had a higher average precipitation rate compared to 2020, where there was a sharp increase in total acres burned. However, other years have rather ambiguous relationships, including but not limited to the years 2015 to 2017, wher the total acres burned increased despite the increasing average precipitation.
+```{r}
+primary_y<-c(122, 2942034)
+secondary_y<- c(7.93, 29.12)
+
+d <- diff(primary_y)/diff(secondary_y)
+c <- primary_y[1] - d*secondary_y[1]
+
+ggplot(megatable, aes(year, total_acres_burned)) +
+  geom_line(group=1, aes(color="red")) + 
+  geom_line(aes(y = c + Avg_Precipitation*d, color = "blue"), group=1) +
+  scale_y_continuous("total_acres_burned", sec.axis = sec_axis(~ (.-c)/d, name = "Avg_Precipitation")) +
+  ggtitle("Total Acres Burned and Average Precipitation", subtitle=" 2009-2023")+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_color_identity(name = "Variable",
+                          breaks = c("red", "blue"),
+                          labels = c("Total Acres Burned", "Average Precipitation"),
+                          guide = "legend")
+
+```
+
+This graph displays average annual temperatures and annual precipitation values as a broad overview of both climatic variables. Values for 2023 are missing since the year has not ended and the data has not been finalized. 
+```{r}
+
+Avg_Temp_y <- c(58.8, 61.5)
+Avg_Precipitation_y <- c(7.93, 29.12)
+
+f <- diff(Avg_Temp_y)/diff(Avg_Precipitation_y)
+e <- Avg_Temp_y[1] - f*Avg_Precipitation_y[1]
+
+ggplot(megatable, aes(year, Avg_Temp)) +
+  geom_line(group=1, aes(color="darkgreen")) + 
+  geom_line(aes(y = e + Avg_Precipitation*f, color = "blue"), group=1) +
+  scale_y_continuous("Avgerage Temperature (F)", sec.axis = sec_axis(~ (.-e)/f, name = "Average Annual Precipitation(in)")) +
+  ggtitle("Average Temperature and Annual Precipitation,  2009-2023")+
+  theme(axis.text.x = element_text(angle = 90))+
+  scale_color_identity(name = "Variable",
+                          breaks = c("darkgreen", "blue"),
+                          labels = c("Average Temperature", "Average Precipitation"),
+                          guide = "legend")
+```
+
+## Discussion
+Our results showcase how the fluctuations in climate data have potential correlations with the frequency and severity of forest fires. However, we are lacking a mathematical analysis of the correlation to determine whether it is statistically significant. What the data clearly shows is that average temperature and precipitation are highly variable. Additionally, it appears that the total acreage of wildfires increased from 2009 to 2020, followed by a sharp decline. Based on our available data, this can most likley be attributed to recent wetter years. Ideally, this analysis would be performed on a dataset with a longer time span. 
+
+
+# Works Cited
+Climate data obtained from:
+NOAA National Centers for Environmental information, Climate at a Glance: Statewide Time Series, published November 2023, retrieved on December 4, 2023 from https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series
+Fire incident data obtained from:
+https://www.fire.ca.gov/incidents
+Some code based on data from:
+https://stackoverflow.com/questions/3099219/ggplot-with-2-y-axes-on-each-side-and-different-scales
+Initial Paper:
+Krawchuk, M., & Moritz, M. (2012). Fire and Climate Change in California: Changes in the Distribution and Frequency of Fire in Climates of the Future and Recent Past (1911-2099). UC Berkeley: California Institute for Energy and Environment (CIEE). Retrieved from https://escholarship.org/uc/item/5wd1797m
