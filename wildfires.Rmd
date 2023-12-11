@@ -152,7 +152,7 @@ ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable,
 ```
 
 
-We want to also compare the trends of these different variables across the past decade by running the data points from these variables on the same graph. In this graph we are comparing the trends of total acres burned with average annual temperatures. 
+We want to also compare the trends of these different variables across the past decade by running the data points from these variables on the same graph. In this graph we are comparing the trends of total acres burned with average annual temperatures. The correlation between these two variables is not very strong. For example, from 2013 to 2016 average temperatures were high but the number of acres burned remained low. However, between 2017 and 2021, total acres burned appeared to fluctuate in sync with average temperatures. This could be due to higher temperatures leading to less moisture in the air and fuel, leading to increased likelihood, intensity, and extent of wildfires. 
 ```{r}
 ylim.prim <- c(122, 2942034)
 ylim.sec <- c(58.8, 61.5)
@@ -173,7 +173,7 @@ ggplot(megatable, aes(year, total_acres_burned)) +
 ```
 
 
-This graph highlights total acres burned and annual precipitation values. In general, the higher the precipitation, the wetter the land, and therefore the lesser the chance of fires occurring. This correlation is clear especially between 2019 and 2020, whereby 2019 had a way higher average precipitation rate compared to 2020. In turn, there’s a sharp increase in total acres burned. However, other years have rather ambiguous relationships, including but not limited to the years 2015 to 2017, whereby the total acres burned increased despite the increasing average precipitation.
+This graph highlights total acres burned and annual precipitation values. In general, the higher the precipitation, the wetter the land, and therefore the lesser the chance of fires occurring. This correlation is clear especially between 2019 and 2020, where 2019 had a higher average precipitation rate compared to 2020, where there was a sharp increase in total acres burned. However, other years have rather ambiguous relationships, including but not limited to the years 2015 to 2017, wher the total acres burned increased despite the increasing average precipitation.
 ```{r}
 primary_y<-c(122, 2942034)
 secondary_y<- c(7.93, 29.12)
@@ -215,13 +215,9 @@ ggplot(megatable, aes(year, Avg_Temp)) +
                           guide = "legend")
 ```
 
-Discussion: Our results showcase how the fluctuations in climate data have potential correlations with the frequency and severity of forest fires. 
+## Discussion
+Our results showcase how the fluctuations in climate data have potential correlations with the frequency and severity of forest fires. However, we are lacking a mathematical analysis of the correlation to determine whether it is statistically significant. What the data clearly shows is that average temperature and precipitation are highly variable. Additionally, it appears that the total acreage of wildfires increased from 2009 to 2020, followed by a sharp decline. Based on our available data, this can most likley be attributed to recent wetter years. Ideally, this analysis would be performed on a dataset with a longer time span. 
 
-#notes:
--adding longitude and latitude points to rasters, creating raster for each year and using predictor equations 
--describe transformation applied to the data to generate secondary y-axis
--update README file
--clean up formatting and knit to pdf 
 
 # Works Cited
 Climate data obtained from:
