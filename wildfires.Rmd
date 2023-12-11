@@ -71,16 +71,9 @@ Next, we are reading in a shapefile with the borders of California. Additionally
 ```{r}
 new_counties<-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
 unzip("ca-county-boundaries.zip")
+
 CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
 st_crs(fire_spatial)<- st_crs(CA)
-
-new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
-st_crs(fire_spatial)<- st_crs(new)
-
-tm_shape(new)+tm_polygons()+
-  tm_shape(fire_spatial)+
-  tm_dots(size="incident_acres_burned", col = "red")+
-  tm_layout(legend.width=0.6)
 
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_spatial)+
