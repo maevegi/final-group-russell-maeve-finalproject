@@ -1,14 +1,12 @@
 
-*add GitHub Actions badge here*
+[![Reproducibility](https://github.com/espm-157/final-group-russell-maeve-finalproject/actions/workflows/main.yml/badge.svg)](https://github.com/espm-157/final-group-russell-maeve-finalproject/actions/workflows/main.yml)
 
 ## Team Members:
 
-- full name, github handle
-- full name, github handle
+- Maeve Gilbert, maevegi
+- Russell Huang, Huangary1126
 
-This repository is a template for your team's repository.
-
-## assignment
+## Assignment Description
 
 All work for this assignment should be in the `assignment` directory.  You will work in the `.Rmd` notebook, and commit your rendered output files (`.md` and associated files) in the `assignment` directory as well.
 
