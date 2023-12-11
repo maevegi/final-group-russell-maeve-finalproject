@@ -24,9 +24,9 @@ library(xml2)
 
 ## Introduction
 
-For the state of California, wildfires are perhaps one of the most pressing concerns in terms of the future of climate change. In order to examine the relationship between climate change and wildifire extent, we are examining average temperature and precipitation compared to the number of acres burned per year, in a period from 2009-2023. Our analysis is loosely based on that of Krawchuk and Moritz (2012). However, due to difficulties in accessing the exact data used in this study, our scope is limited to a 13 year time span. Our temperature data is also obtained from the NOAA National Centers for Environmental Information rather than the PRISM project, which the authors used. Due to these differences, our results and analysis of the data are different than those of the paper. 
+For the state of California, wildfires are perhaps one of the most pressing concerns in terms of the future of climate change. In order to examine the relationship between climate change and wildfire extent, we are examining average temperature and precipitation compared to the number of acres burned per year, in a period from 2009-2023. Our analysis is loosely based on that of Krawchuk and Moritz (2012). However, due to difficulties in accessing the exact data used in this study, our scope is limited to a 13 year time span. Our temperature data is also obtained from the NOAA National Centers for Environmental Information rather than the PRISM project, which the authors used. Due to these differences, our results and analysis of the data are different than those of the paper. 
 
-Three skills we are using in this module
+The following are the three skills we are using in this module:
 -Expansion of ggplot functions (to include more than default characteristics)
 -Use of at least 5 `dplyr` verbs / functions
 -Use of spatial vector data (sf package) and visualization of spatial data
@@ -34,16 +34,17 @@ Make sure to knit to pdf document when finished.
 
 
 ## Formatting the Data
-The first step in analyzig wildfire data is to obtai information regarding fire incident dates, locations, longtidue and latitude, and the number of acres burned. Our data is collected from CalFire. The second step performed here transforms the longitude and latitude points from this .csv file into a spatial object so that we can later map these points onto and sf file of the state. Additionally, because the points have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. 
+The first step in analyzing wildfire data is to obtain information regarding fire incident dates, locations, longitude and latitude, and the number of acres burned. Our data is collected from CalFire. The second step performed here transforms the longitude and latitude points from this .csv file into a spatial object so that we can later map these points onto an sf file of the state. Additionally, because the points have no specified crs boundaries, they are assigned the same boundaries as that of our California shapefile. 
 ```{r} 
 fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
                  col_types="ccTTc?ccddccddcccTDDcll")
 fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
 
 st_crs(fire_spatial)<- st_crs(new)
+
 ```
 
-Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available dat being 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we are the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occuring in December is low. 
+Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available data being from 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we use the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occurring in December is low. 
 ```{r}
 
 acres<-fire |>
@@ -54,11 +55,9 @@ acres<-fire |>
 
 acres_burned<-acres[-c(1), ]
 
-
-
 ```
 
-We chose to change the default graphing setting from scientific notation to plain integers to show the acres burned in a clearer manner. Here, we are  showing the number of acres burned in wildfires every year from 2009 to 2023. 
+We chose to change the default graphing setting from scientific notation to plain integers to show the acres burned in a clearer manner. Here, we are showing the number of acres burned in wildfires every year from 2009 to 2023. 
 ```{r}
 options(scipen=999)
 graph<- acres_burned|>
@@ -68,13 +67,10 @@ graph<- acres_burned|>
   ylab("Number of Acres Burned")+
   ggtitle("Acres burned in CA Wildfires, 1969-2023")
 
-
 ```
 
-
-```{r}
 Trying shapefile from folder "County".
-{r}
+```{r}
 new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
 
 tm_shape(new)+tm_polygons()+
@@ -112,7 +108,7 @@ loop<-for(i in 1:nrow(fire_spatial)){
 loop
 ```
 
-Because our analysis is focused on how climate changes influence wildfires, we need to read in climate data containing precipitation and average temperature values. Since the time frame for fire data was 2009-2023, we are using this same period to obtain temperature data. Due to the formatting of the data, we needed to drop extraneous time stamp details to limit the date to a four-digit year. We renamed the "Value" column to Avg_Temp, which represents average temperature in degrees Fahrenheit. Anomaly represents the deviation from an average, calculated from the mean temperature between 1901-2000. Note that because the year 2023 is not over, our data only goes until 2022. 
+Because our analysis is focused on how climate changes influence wildfires, we need to read in climate data containing precipitation and average temperature values. Since the time frame for fire data is between 2009-2023, we are using this same period to obtain temperature data. Due to the formatting of the data, we needed to drop extraneous time stamp details to limit the date to a four-digit year. We renamed the "Value" column to Avg_Temp, which represents average temperature in degrees Fahrenheit. Anomaly represents the deviation from an average, calculated from the mean temperature between 1901-2000. Note that because the year 2023 is not over, our data only goes until 2022. 
 ```{r}
 
 temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/tavg/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
@@ -126,7 +122,7 @@ new_temp
 
 ```
 
-Next, we collected precipitation data from 2009-2023. We applied the same manipulation on the years column to show a four digit date. Precipitation is listed in total inches per twelve month period. This column was renamed Avg_Precipitation (formerly Value). Anomaly represents the deviation from the average calculated from 1901-2000. 
+Next, we collected precipitation data from 2009-2023. We applied the same manipulation on the years column to show a four digit date. Precipitation is listed in total inches per twelve month period. This column was renamed Avg_Precipitation (formerly "Value"). Anomaly represents the deviation from the average calculated from 1901-2000. 
 ```{r}
 precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/statewide/time-series/4/pcp/12/12/2009-2023.csv?base_prd=true&begbaseyear=1901&endbaseyear=2000",
                          skip=4)
@@ -134,9 +130,10 @@ new_precip<-precipitation|>
   mutate(Date = str_extract(Date, "\\d{4}"))|>
   rename(Avg_Precipitation=Value)
 new_precip
+
 ```
 
-Our first method of comparison was to plot each graph side by side. To do this, we first combined all three tables (acres burned, temperature, and precipitation) and changed all of the columns from Date to year. We then excluded the column containing the anomaly values, since this was unncessary for the analysis. In order to 
+Our first method of comparison was to plot each graph side by side. To do this, we first combined all three tables (acres burned, temperature, and precipitation) and changed all of the columns from "Date" to "year". We then excluded the columns containing the anomaly values, since this was unnecessary for the analysis. To ensure that the values are going to be correctly inputted into the graphs, we utilise the "pivot_longer" function, whereby the variables are separated with their associated data. We do this while creating a new subject called "experiment". From there we plot the data points and make necessary adjustments in order to create neat and legible graphs showcasing the trends in acres burned, temperature, and precipitation between 2009 and 2022/2023.
 ```{r}
 megatable<- left_join(acres_burned, new_temp, by = c("year" = "Date"))|>
   left_join(new_precip, by=c("year"="Date"))|>
@@ -150,7 +147,7 @@ ggplot(experiment, aes(x=year, y=data))+geom_line(group=1)+facet_wrap(~variable,
 
 ```
 
-Graph with total acres burned and average annual temperatures 
+We want to also compare the trends of these different variables across the past decade by running the data points from these variables on the same graph. In this graph we are comparing the trends of total acres burned with average annual temperatures. 
 ```{r}
 
 ylim.prim <- c(122, 2942034)
@@ -171,28 +168,7 @@ ggplot(megatable, aes(year, total_acres_burned)) +
                           guide = "legend")
 ```
 
-```{r}
-
-ylim.prim <- c(122, 2942034)
-ylim.sec <- c(58.8, 61.5)
-
-b <- diff(ylim.prim)/diff(ylim.sec)
-a <- ylim.prim[1] - b*ylim.sec[1]
-
-cool_plot_bro <- ggplot(megatable, aes(year, total_acres_burned)) +
-  geom_line(group=1, aes(color= "gray")) + 
-  geom_line(aes(y = a + Avg_Temp*b), color = "darkgreen", group=1) +
-  scale_y_continuous("Total Acres Burned", sec.axis = sec_axis(~ (. -a)/b, name = "Avg_Temp (F)")) +
-  ggtitle("Total Acres Burned & Average Temperature",  subtitle="2009-20223" ) +
-  
-  #scale_color_manual(name = 'Variables',
-                     #breaks = c('total_acres_burned', 'Avg_Temp'),
-                    # values = c('red', 'darkgreen')) + 
-  geom_text(aes(x = 8, y = 15, label = "-- = total_acres_burned"), color = "gray")
-cool_plot_bro 
-```
-
-Graph with total acres burned and annual precipitation values
+This graph highlights total acres burned and annual precipitation values
 ```{r}
 primary_y<-c(122, 2942034)
 secondary_y<- c(7.93, 29.12)
@@ -213,7 +189,7 @@ ggplot(megatable, aes(year, total_acres_burned)) +
 
 ```
 
-Graph with average annual temperatures and annual precipitation values. Values for 2023 are missing since the year has not ended and the data has not been finalized. 
+This graph highlights average annual temperatures and annual precipitation values. Values for 2023 are missing since the year has not ended and the data has not been finalized. 
 ```{r}
 Avg_Temp_y <- c(58.8, 61.5)
 Avg_Precipitation_y <- c(7.93, 29.12)
@@ -233,10 +209,8 @@ ggplot(megatable, aes(year, Avg_Temp)) +
                           guide = "legend")
 ```
 
-#notes for office hours:
-- adding a legend to ggplots 
+#notes:
 -adding longitude and latitude points to rasters, creating raster for each year and using predictor equations 
--clarify how the transformation equations work 
 
 # Works Cited
 Climate data obtained from:
