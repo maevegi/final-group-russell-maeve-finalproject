@@ -75,17 +75,6 @@ unzip("ca-county-boundaries.zip")
 CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
 st_crs(fire_spatial)<- st_crs(CA)
 
-<<<<<<< HEAD
-=======
-#new <- read_sf("County", layer="CaliforniaCounty", quiet=TRUE)
-#st_crs(fire_spatial)<- st_crs(new)
-
-#tm_shape(new)+tm_polygons()+
-  #tm_shape(fire_spatial)+
-  #tm_dots(size="incident_acres_burned", col = "red")+
-  #tm_layout(legend.width=0.6)
-
->>>>>>> d9fa9765d384df83c4fdcca1de872ecb4114ac0b
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots(size="incident_acres_burned", col = "red")+
