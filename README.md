@@ -13,14 +13,12 @@ This project examines the relationship between climate change and Californian wi
 ### Files
 
 - The README.md file gives an overview of the projet and relevant descriptions of the files.
-- The .Rmd and .md files for the project can be found in the assignment folder. This folder also contains .rds and .zip files which contain the data used for this project which have been stored in this format. 
-- `<REPO-NAME>.Rproj` Optional, an R-Project file created by RStudio for it's own configuration.  Some people prefer to `.gitignore` this file.
-
+- The .Rmd and .md files for the project can be found in the assignment folder as well as the pdf file. This folder also contains .rds and .zip files which contain the data used for this project which have been stored in this format. 
 
 ### Other
 
 - '.gitignore' is an empty folder for files that we do not want to commit to this github repository as they are too large.
-- `DESCRIPTION` a metadata file for the repository, based on the R package standard. It's main purpose here is as a place to list any additional R packages/libraries needed for any of the `.Rmd` files to run.
+
 
 
 
