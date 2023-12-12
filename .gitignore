@@ -4,9 +4,5 @@
 .Ruserdata
 .Rbuildignore
 *.Rproj
-<<<<<<< HEAD
-wildfires.html
-ca-county-boundaries.zip
-=======
 ca-state-boundary.zip
->>>>>>> ef0f89ded4090941c2b7debaa799ae9664091c32
+
