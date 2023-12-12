@@ -1,14 +1,15 @@
 ---
-Title: Wildfire Frequency, Severity and Climate Change in California
-author: Russell Huang and Maeve Gilbert
+title: Wildfire Frequency, Severity and Climate Change in California
+author: "Russell Huang and Maeve Gilbert"
 output: 
- html_document:
-   df_print: paged 
- github_document: 
- pdf_document:
-   md_document:
+  github_document: 
+  html_document:
+    df_print: paged
+  pdf_document: default
+  md_document:
+  
 ---
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(tmap)
 library(terra)
@@ -16,7 +17,12 @@ library(sf)
 library(ggplot2)
 library(stars)
 library(methods)
+#install.packages('tinytex')
+library(tinytex)
+#update.packages(ask = FALSE, checkBuilt = TRUE)
+#tinytex::tlmgr_update()
 ```
+
 
 ## Introduction
 
@@ -36,6 +42,8 @@ fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
         mutate(year = str_extract(incident_date_created, "\\d{4}"))
 
 fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
+
+
 ```
 
 Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available data being from 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we use the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occurring in December is low. 
@@ -71,13 +79,24 @@ Next, we are reading in a shapefile with the borders of California. Additionally
 new_counties<-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
 unzip("ca-county-boundaries.zip")
 
-CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
+CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016", quiet=TRUE)
+
 st_crs(fire_spatial)<- st_crs(CA)
+st_bbox(fire_spatial)
+st_bbox(CA)
+st_crs(CA)
+st_crs(fire_spatial)
+#st_bbox(CA)<-st_bbox(fire_spatial)
+
+fire_spatial <- st_transform(fire_spatial, crs = "+proj=longlat +datum=WGS84")
+#CA <- st_transform(CA, crs = "+proj=longlat +datum=WGS84")
+
 
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots(size="incident_acres_burned", col = "red")+
-  tm_layout(legend.width=0.6)
+  tm_layout(legend.width=0.9)
+ 
 ```
 In order to visualize wildfires across the state over time, we are repeating the process done with all incident points with data from 2013, 2020, and 2022 individually. We could not use data from 2009 since there was no associated longitude and latitude points, so we had to start with the next available year (2013). We wanted to compare the oldest and newest data points against each other to see if the number and distribution of wildfires has changed over time. We also included the year 2020, since the number of acres burned greatly increased. Notice that the scale of the dots changes for each year. 
 ```{r}
@@ -89,19 +108,27 @@ fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
 
 fire_2020<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))|>
   filter(year==2020)
+```
 
+```{r}
 st_crs(fire_2013)<- st_crs(CA)
-tm_shape(CA)+tm_polygons()+
+tm_shape(CA)+
+  tm_polygons(alpha=0.2)+
   tm_shape(fire_2013)+
   tm_dots(size="incident_acres_burned", col="red")+
   tm_layout(legend.width=0.6)
+```
 
+```{r}
 st_crs(fire_2020)<- st_crs(CA)
-tm_shape(CA)+tm_polygons()+
+tm_shape(CA)+
+tm_polygons()+
   tm_shape(fire_2020)+
   tm_dots(size="incident_acres_burned", col="red")+
   tm_layout(legend.width=0.6)
+```
 
+```{r}
 st_crs(fire_2022)<- st_crs(CA)
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_2022)+
