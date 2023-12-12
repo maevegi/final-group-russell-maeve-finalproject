@@ -13,11 +13,11 @@ This project examines the relationship between climate change and Californian wi
 ### Files
 
 - The README.md file gives an overview of the projet and relevant descriptions of the files.
-- The .Rmd and .md files for the project can be found in the assignment folder as well as the pdf file. This folder also contains .rds and .zip files which contain the data used for this project which have been stored in this format. 
+- The .Rmd and .md files for the project can be found in the assignment folder as well as the html file. We had difficulty with the required packages for knitting to a pdf document and chose to make an html document instead. This folder also contains .rds and .zip files which contain the data used for this project which have been stored in this format. 
 
 ### Other
 
-- '.gitignore' is an empty folder for files that we do not want to commit to this github repository as they are too large.
+- '.gitignore' is an folder for files that we do not want to commit to this github repository as they are too large.
 
 
 
