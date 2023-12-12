@@ -1,14 +1,15 @@
 ---
-Title: Wildfire Frequency, Severity and Climate Change in California
-author: Russell Huang and Maeve Gilbert
+title: Wildfire Frequency, Severity and Climate Change in California
+author: "Russell Huang and Maeve Gilbert"
 output: 
- html_document:
-   df_print: paged 
- github_document: 
- pdf_document:
-   md_document:
+  
+  html_document:
+    df_print: paged
+  github_document: 
+  pdf_document: default
+  md_document:
 ---
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(tmap)
 library(terra)
@@ -16,7 +17,9 @@ library(sf)
 library(ggplot2)
 library(stars)
 library(methods)
+
 ```
+
 
 ## Introduction
 
@@ -36,6 +39,8 @@ fire <- read_csv("https://incidents.fire.ca.gov/imapdata/mapdataall.csv",
         mutate(year = str_extract(incident_date_created, "\\d{4}"))
 
 fire_spatial<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
+
+
 ```
 
 Because the csv file contains many columns that are not relevant to our current analysis, we are selecting only the relevant columns from the data. Additionally, the data contain a singular observation in 1969, with the next available data being from 2009. Due to the large gap between years and potential problems with calculating trends, we are excluding the data from 1969 to create a consistent time frame that will match with our climate data. With this information, we use the acres burned for each incident each year to get a total acres burned value. It should be noted that data for 2023 is up until the point we accessed the data, but may be slightly different. However, the likelihood of another wildfire occurring in December is low. 
@@ -71,13 +76,16 @@ Next, we are reading in a shapefile with the borders of California. Additionally
 new_counties<-download.file("https://data.ca.gov/dataset/e212e397-1277-4df3-8c22-40721b095f33/resource/b0007416-a325-4777-9295-368ea6b710e6/download/ca-county-boundaries.zip", "ca-county-boundaries.zip")
 unzip("ca-county-boundaries.zip")
 
-CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016")
+CA<- read_sf("CA_Counties", layer="CA_Counties_TIGER2016", quiet=TRUE)
+
 st_crs(fire_spatial)<- st_crs(CA)
+
 
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_spatial)+
   tm_dots(size="incident_acres_burned", col = "red")+
-  tm_layout(legend.width=0.6)
+  tm_layout(legend.width=0.9)
+ 
 ```
 In order to visualize wildfires across the state over time, we are repeating the process done with all incident points with data from 2013, 2020, and 2022 individually. We could not use data from 2009 since there was no associated longitude and latitude points, so we had to start with the next available year (2013). We wanted to compare the oldest and newest data points against each other to see if the number and distribution of wildfires has changed over time. We also included the year 2020, since the number of acres burned greatly increased. Notice that the scale of the dots changes for each year. 
 ```{r}
@@ -89,20 +97,37 @@ fire_2022 <- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))
 
 fire_2020<- st_as_sf(fire, coords=c("incident_longitude", "incident_latitude"))|>
   filter(year==2020)
+```
 
+```{r}
 st_crs(fire_2013)<- st_crs(CA)
-tm_shape(CA)+tm_polygons()+
+```
+
+```{r}
+tm_shape(CA)+
+  tm_polygons(alpha=0.2)+
   tm_shape(fire_2013)+
   tm_dots(size="incident_acres_burned", col="red")+
   tm_layout(legend.width=0.6)
+```
 
+```{r}
 st_crs(fire_2020)<- st_crs(CA)
-tm_shape(CA)+tm_polygons()+
+```
+
+```{r}
+tm_shape(CA)+
+tm_polygons()+
   tm_shape(fire_2020)+
   tm_dots(size="incident_acres_burned", col="red")+
   tm_layout(legend.width=0.6)
+```
 
+```{r}
 st_crs(fire_2022)<- st_crs(CA)
+```
+
+```{r}
 tm_shape(CA)+tm_polygons()+
   tm_shape(fire_2022)+
   tm_dots(size="incident_acres_burned", col="red")+
@@ -110,6 +135,8 @@ tm_shape(CA)+tm_polygons()+
 
 
 ```
+
+NOTE: We experienced difficulty getting our tmap objects to consistently print the tm_dots onto the California sf object. Depending on how many times and the order in which our code ran, the outcome was different. We did our best to resolve the issue (see commit history) but it is likely that the tmap objects will not print correctly in the final version. Rather than deleting this section, we wanted to keep our work in the event that we can resolve the issue later, and because we spent a lot of time and effort trying to create these maps. 
 
 ##Climate Data
 
@@ -122,7 +149,7 @@ temp<-read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at-a-glance/
 new_temp<-temp|>
   mutate(Date = str_extract(Date, "\\d{4}"))|>
   rename(Avg_Temp=Value)
-new_temp
+
 
 
 ```
@@ -134,7 +161,7 @@ precipitation<- read_csv("https://www.ncei.noaa.gov/access/monitoring/climate-at
 new_precip<-precipitation|>
   mutate(Date = str_extract(Date, "\\d{4}"))|>
   rename(Avg_Precipitation=Value)
-new_precip
+
 
 ```
 
@@ -216,7 +243,7 @@ ggplot(megatable, aes(year, Avg_Temp)) +
 ```
 
 ## Discussion
-Our results showcase how the fluctuations in climate data have potential correlations with the frequency and severity of forest fires. However, we are lacking a mathematical analysis of the correlation to determine whether it is statistically significant. What the data clearly shows is that average temperature and precipitation are highly variable in California, characteristic of a Mediterreanean climate. Additionally, it appears that the total acreage of wildfires increased from 2009 to 2020, followed by a sharp decline. Based on our available data, this can most likely be attributed to recent wetter years. Ideally, this analysis would be performed on a data set with a longer time span with more precise calculations of average temperatures by month. Since fire season generally goes from May to through October, comparing the average temperatures from these months may give a more accurate representation of the climate variables that have an impact on wildfire occurence and size. 
+Our results showcase how the fluctuations in climate data have potential correlations with the frequency and severity of forest fires. However, we are lacking a mathematical analysis of the correlation to determine whether it is statistically significant. What the data clearly shows is that average temperature and precipitation are highly variable in California, characteristic of a Mediterranean climate. Additionally, it appears that the total acreage of wildfires increased from 2009 to 2020, followed by a sharp decline. Based on our available data, this can most likely be attributed to recent wetter years. Ideally, this analysis would be performed on a data set with a longer time span with more precise calculations of average temperatures by month. Since fire season generally goes from May to through October, comparing the average temperatures from these months may give a more accurate representation of the climate variables that have an impact on wildfire occurence and size. 
 
 
 # Works Cited
