@@ -194,7 +194,8 @@ st_crs(fire_spatial)
 ``` r
 #st_bbox(CA)<-st_bbox(fire_spatial)
 
-fire_spatial <- st_transform(fire_spatial, crs = "+proj=longlat +datum=WGS84")
+
+#fire_spatial <- st_transform(fire_spatial, crs = "+proj=longlat +datum=WGS84 +EPSG=3857")
 
 
 
